@@ -10,9 +10,6 @@ export default {
     // Initialize Lua state with all standard libraries
     const L = initLuaState();
     
-    // Register built-in classes
-    registerClass('MyJSClass', MyJavaScriptClass);
-    
     return this;
   },
   
