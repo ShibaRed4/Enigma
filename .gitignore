@@ -21,6 +21,7 @@ scripts
 index.html
 luaEngine.js
 main.js
+test.js
 .vscode/*
 .vscode
 !.vscode/extensions.json
