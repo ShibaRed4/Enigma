@@ -48,7 +48,7 @@ export function jsRequire(modulePath) {
   // unless the path is already absolute or remote
   if (!modulePath.startsWith('./') && !modulePath.startsWith('/') && !modulePath.startsWith('http')) {
     // Use enigma/scripts directory for modules
-    modulePath = `./enigma/scripts/${modulePath}`;
+    modulePath = `./Enigma/scripts/${modulePath}`;
   }
   
   console.log(`Resolved module path: ${modulePath}`);
@@ -232,28 +232,28 @@ function callLuaFunction(moduleRef, funcName, ...args) {
     return null;
   }
   
-  // Push the table as 'self' parameter (for methods)
-  lua.lua_pushvalue(L, -2);
+  // No need to push the table as 'self' parameter - we're calling a regular function
+  lua.lua_remove(L, -2); // Remove the module table from the stack
   
-  // Push additional arguments
+  // Push arguments
   args.forEach(arg => pushValue(arg));
   
-  // Call the function with args.length + 1 arguments (the +1 is for 'self')
+  // Call the function with the correct number of arguments
   const numReturns = 1;
-  const callResult = lua.lua_pcall(L, args.length + 1, numReturns, 0);
+  const callResult = lua.lua_pcall(L, args.length, numReturns, 0);
   
   if (callResult !== lua.LUA_OK) {
     const errorMsg = toJsString(lua.lua_tostring(L, -1));
     console.error(`Error calling "${funcName}":`, errorMsg);
-    lua.lua_pop(L, 2); // Pop error message and table
+    lua.lua_pop(L, 1); // Pop error message
     return null;
   }
   
   // Get the return value
   let returnValue = toJs(-1);
   
-  // Pop the return value and the table
-  lua.lua_pop(L, 2);
+  // Pop the return value
+  lua.lua_pop(L, 1);
   
   return returnValue;
 }

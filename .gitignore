@@ -22,6 +22,7 @@ index.html
 luaEngine.js
 main.js
 .vscode/*
+.vscode
 !.vscode/extensions.json
 vite.config.js
 .idea
