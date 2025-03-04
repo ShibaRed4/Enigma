@@ -73,7 +73,9 @@ return module
 
 ## 🌟 **Get Started!**
 
-###  To get started, simply clone the repo, and drag and drop the "enigma" folder into your project and enjoy!
+###  To get started, simply clone the repo, and drag and drop the "enigma" folder into your project 
+###  Install fengari and fengari-web via your package manager of choice! (CLI Tool coming soon!)
+###  Use the example code and enjoy!
 
 #
 

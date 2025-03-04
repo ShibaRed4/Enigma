@@ -7,8 +7,22 @@ const { lua, lauxlib } = fengari;
 // Store loaded modules to prevent reloading
 const loadedModules = new Map();
 
+// Track the root folder - can be changed by the user
+let scriptsRootFolder = "src/scripts";
+
+// Set the root folder for scripts
+export function setScriptsRootFolder(folder) {
+  scriptsRootFolder = folder;
+  console.log(`Scripts root folder set to: ${scriptsRootFolder}`);
+}
+
+// Get the current root folder
+export function getScriptsRootFolder() {
+  return scriptsRootFolder;
+}
+
 // Async function to fetch a Lua file
-export async function fetchLuaFile(path) {
+export async function fetchLuaFile(path, useRootFolder = true) {
   try {
     // Check if we've already loaded this module
     if (loadedModules.has(path) && typeof loadedModules.get(path) === 'string') {
@@ -16,15 +30,29 @@ export async function fetchLuaFile(path) {
       return loadedModules.get(path);
     }
     
-    console.log(`Fetching Lua module: ${path}`);
-    const response = await fetch(path);
+    // Determine the actual path to load
+    let actualPath = path;
+    
+    // Only apply root folder resolution if useRootFolder is true
+    // and the path is not absolute or remote
+    if (useRootFolder && !path.startsWith('./') && !path.startsWith('/') && !path.startsWith('http')) {
+      actualPath = `${scriptsRootFolder}/${path}`;
+    }
+    
+    console.log(`Fetching Lua module from: ${actualPath}`);
+    const response = await fetch(actualPath);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch module: ${response.statusText}`);
     }
     
     const luaCode = await response.text();
-    console.log(`Fetched Lua module ${path}, ${luaCode.length} bytes`);
+
+    if(luaCode.includes("<")){
+      throw new Error(`Source code is not a lua file! It's probably a path issue. ${actualPath}`)
+    }
+
+    console.log(`Fetched Lua module ${actualPath}, ${luaCode.length} bytes`);
     
     // Store in cache
     loadedModules.set(path, luaCode);
@@ -43,15 +71,6 @@ export function jsRequire(modulePath) {
   if (!modulePath.endsWith('.lua')) {
     modulePath += '.lua';
   }
-  
-  // Always use the scripts directory for our custom modules
-  // unless the path is already absolute or remote
-  if (!modulePath.startsWith('./') && !modulePath.startsWith('/') && !modulePath.startsWith('http')) {
-    // Use enigma/scripts directory for modules
-    modulePath = `./Enigma/scripts/${modulePath}`;
-  }
-  
-  console.log(`Resolved module path: ${modulePath}`);
   
   // Check if already loaded from cache
   if (loadedModules.has(modulePath) && 
@@ -174,20 +193,17 @@ export function setupRequireFunction() {
 }
 
 // Load and execute Lua script
-export async function loadLuaScript(filePath) {
+export async function loadLuaScript(filePath, useExactPath = true) {
   try {
     const L = getLuaState();
     
     // Ensure the require function is set up
     setupRequireFunction();
     
-    // Resolve the path to be within the enigma/scripts directory if it's not absolute
-    let resolvedPath = filePath;
-    if (!filePath.startsWith('./') && !filePath.startsWith('/') && !filePath.startsWith('http')) {
-      resolvedPath = `./enigma/scripts/${filePath}`;
-    }
+    console.log(`Loading Lua script: ${filePath} (useExactPath: ${useExactPath})`);
     
-    const luaCode = await fetchLuaFile(resolvedPath);
+    // Use the path exactly as provided if useExactPath is true
+    const luaCode = await fetchLuaFile(filePath, !useExactPath);
     
     // Load and execute the Lua code
     const result = lauxlib.luaL_dostring(L, toLuaString(luaCode));
